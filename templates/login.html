@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0; /* Gri arka plan */
+            margin: 0;
+            padding: 0;
+        }
+        
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #ffffff; /* Beyaz arka plan */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative; /* Position relative for the absolute positioning of the button */
+        }
+        
+        .auth-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333; /* Koyu gri başlık rengi */
+        }
+        
+        .form-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            width: 40%;
+            text-align: right;
+            margin-right: 10px;
+            color: #333; /* Koyu gri label rengi */
+        }
+        
+        .form-group input {
+            width: 55%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .auth-button {
+            width: 100%;
+            padding: 8px; /* Azaltılmış padding */
+            background-color: #e0e0e0; /* Gri arka plan */
+            color: #333; /* Koyu gri yazı rengi */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px; /* Küçültülmüş font boyutu */
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .auth-button:hover {
+            background-color: #b0b0b0; /* Daha koyu gri hover arka plan rengi */
+        }
+        
+        p {
+            text-align: center;
+            margin-top: 20px;
+            color: #333; /* Koyu gri yazı rengi */
+        }
+        
+        a {
+            color: #333; /* Koyu gri bağlantı rengi */
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .index-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 8px 16px; /* Azaltılmış padding */
+            background-color: #e0e0e0; /* Gri arka plan */
+            color: #333; /* Koyu gri yazı rengi */
+            border: 2px solid #333; /* Koyu gri kenar rengi */
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px; /* Küçültülmüş font boyutu */
+            transition: background-color 0.3s ease;
+        }
+        
+        .index-button:hover {
+            background-color: #333; /* Koyu gri hover arka plan rengi */
+            color: #ffffff; /* Beyaz yazı rengi hover durumunda */
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Index Button -->
+        <a href="{{ url_for('index') }}" class="index-button">Go Back</a>
+
+        <h1>Login</h1>
+        
+        <form action="{{ url_for('login') }}" method="POST">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="auth-button">Login</button>
+        </form>
+        
+        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    </div>
+</body>
+</html>

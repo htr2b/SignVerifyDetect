@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Verification</title>
+    <style>
+        /* Genel Ayarlar */
+        /* Genel Ayarlar */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f0f0f0; /* Gri arka plan */
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column; /* Sayfa içeriklerini dikeyde hizalar */
+}
+
+/* Sayfanın Üst Başlığı */
+.page-title {
+    color: #333; /* Gri başlık rengi */
+    font-size: 3em; /* Büyük başlık boyutu */
+    margin: 20px 0; /* Üst ve alt margin */
+}
+
+/* Index Container */
+.index-container {
+    width: 90%;
+    max-width: 1200px;
+    background-color: #ffffff; /* Beyaz arka plan */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    color: #333; /* Yazı rengi */
+    text-align: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 sütunlu düzen */
+    gap: 20px;
+    position: relative; /* Logo konumlandırması için gerekli */
+}
+
+/* Boş Konteyner */
+.empty-container {
+    grid-column: span 2; /* Tüm sütunları kapsar */
+    height: 40px; /* Boş alanın yüksekliği */
+}
+
+/* Logo Konteyneri Üstündeki Boş Alan */
+.logo-background {
+    grid-column: span 2; /* Tüm sütunları kapsar */
+    background-color: #f0f0f0; /* Gri arka plan */
+    padding: 20px; /* Boş alanın iç boşluğu */
+    border-radius: 10px; /* Kenarları yuvarlatma */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+    display: flex;
+    justify-content: center; /* Logoyu merkezler */
+    align-items: center;
+    margin-bottom: 40px; /* Boş alandan sonraki içerik için boşluk */
+}
+
+/* Logo Stili */
+.logo-container img {
+    max-width: 200px; /* Logonun maksimum genişliği */
+    height: auto; /* Yüksekliği orantılı tutar */
+}
+
+/* Bilgi Konteyneri */
+.info-container {
+    padding: 20px;
+    background-color: #e0e0e0; /* Gri arka plan */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: #333; /* Yazı rengi */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Container 5'i Ortalamak İçin */
+.info-container.center {
+    grid-column: span 2; /* Tüm sütunları kapsar */
+}
+
+/* Başlıklar */
+h2 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+
+/* Paragraflar */
+p {
+    font-size: 1.2em;
+    margin: 0;
+}
+
+/* Butonlar */
+.start-button, .payment-button {
+    display: inline-block;
+    padding: 12px 25px;
+    color: #333; /* Gri yazı rengi */
+    background-color: #e0e0e0; /* Gri buton arka plan rengi */
+    border: 2px solid #333; /* Koyu gri kenar rengi */
+    border-radius: 50px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 1.2em;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.start-button:hover, .payment-button:hover {
+    background-color: #333; /* Koyu gri hover arka plan rengi */
+    color: #ffffff; /* Beyaz yazı rengi hover durumunda */
+}
+
+/* Butonlar Yan Yana ve Merkezde */
+.button-group {
+    display: flex;
+    justify-content: center; /* Butonları merkezde hizalar */
+    gap: 20px; /* Butonlar arasındaki boşluk */
+    margin-top: 20px;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .index-container {
+        padding: 20px;
+        grid-template-columns: 1fr; /* Tek sütun */
+    }
+
+    .info-container {
+        margin-bottom: 20px;
+    }
+
+    .button-group {
+        flex-direction: column; /* Küçük ekranlarda butonları dikey hizala */
+    }
+}
+
+@media (max-width: 480px) {
+    .index-container {
+        width: 95%;
+    }
+
+    .logo-container img {
+        max-width: 150px; /* Küçük ekranlarda logonun maksimum genişliği */
+    }
+
+    .info-container {
+        padding: 15px; /* Küçük ekranlarda iç boşluk */
+    }
+
+    h2 {
+        font-size: 1.5em; /* Küçük ekranlarda başlık boyutu */
+    }
+
+    p {
+        font-size: 1em; /* Küçük ekranlarda paragraf boyutu */
+    }
+
+    .start-button, .payment-button {
+        padding: 10px 20px; /* Küçük ekranlarda buton boyutu */
+        font-size: 1em; /* Küçük ekranlarda buton yazı boyutu */
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="page-title"></div>
+
+    <div class="index-container">
+        <!-- Boş Konteyner -->
+        <div class="empty-container"></div>
+
+        <!-- Logo Konteyneri Üstündeki Boş Alan -->
+        <div class="logo-background">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            </div>
+        </div>
+
+        <!-- Container 1 -->
+        <div class="info-container">
+            <h2>Welcome to Sign Verification</h2>
+            <p>Our system provides a secure and efficient way to verify your signatures.</p>
+        </div>
+
+        <!-- Container 2 -->
+        <div class="info-container">
+            <h2>About VerifAI</h2>
+            <p>Verifai is a cutting-edge AI application designed to verify the authenticity of signatures on various documents. Our goal is to provide a secure and reliable platform for all your verification needs.</p>
+        </div>
+
+        <!-- Container 3 -->
+        <div class="info-container">
+            <h2>How it works?</h2>
+            <p>Upload your document, and let our AI analyze the signatures to determine their authenticity. Our process is quick, accurate, and easy to use.</p>
+        </div>
+
+        <!-- Container 4 -->
+        <div class="info-container">
+            <h2>Easy Upload</h2>
+            <p>Upload your document easily with just a few clicks. Our system supports various image formats.</p>
+        </div>
+
+        <!-- Container 5 -->
+        <div class="info-container center">
+            <div class="button-group">
+                <a href="{{ url_for('login') }}" class="start-button">Let's Start</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

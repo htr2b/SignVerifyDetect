@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Verification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0; /* Açık gri arka plan */
+        }
+
+        .container {
+            width: 60%; /* Adjust container width if needed */
+            background: #ffffff; /* Beyaz arka plan */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Center text within the container */
+            position: relative; /* Position relative to allow absolute positioning of the login button */
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label, .analyze-button, .payment-button, .login-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #cccccc; /* Gri arka plan */
+            color: #333; /* Koyu gri yazı rengi */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            margin: 5px; /* Add margin to separate buttons */
+        }
+
+        .file-input-label:hover, .analyze-button:hover, .payment-button:hover, .login-button:hover {
+            background-color: #b0b0b0; /* Daha koyu gri hover arka plan rengi */
+        }
+
+        .login-button {
+            background-color: #ffffff; /* Beyaz arka plan */
+            color: #333; /* Koyu gri yazı rengi */
+            border: 2px solid #cccccc; /* Gri border */
+            position: absolute; /* Absolute positioning */
+            top: -1px; /* Adjust distance from top (increased from -10px to 30px) */
+            left: 0px; /* Distance from left */
+        }
+
+        .login-button:hover {
+            background-color: #cccccc; /* Gri arka plan on hover */
+            color: #333; /* Koyu gri yazı rengi on hover */
+        }
+
+        .image-container {
+            display: flex; /* Use flexbox for layout */
+            flex-wrap: wrap; /* Allow items to wrap to the next line */
+            gap: 20px; /* Space between images */
+            justify-content: center; /* Center items horizontally */
+            margin-top: 30px;
+        }
+
+        .image-item, .result-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center; /* Center text within the container */
+            width: 45%; /* Adjust width if needed */
+        }
+
+        .image-item h2, .result-item h2 {
+            margin: 0;
+            margin-bottom: 10px;
+            color: #333; /* Koyu gri başlık rengi */
+        }
+
+        .image-container img {
+            max-width: 100%; /* Adjust to fit the container */
+            max-height: 250px; /* Set fixed height */
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            cursor: pointer; /* Change cursor to pointer */
+            transition: transform 0.3s ease;
+            object-fit: contain; /* Ensures the image fits within the container */
+        }
+
+        .image-container img:hover {
+            transform: scale(1.05);
+        }
+
+        .result-item {
+            margin-top: 20px;
+        }
+
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .payment-button {
+            margin-top: 20px; /* Add margin above the button */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Button -->
+        <a href="{{ url_for('login') }}" class="login-button">Go Back</a>
+        <h1>Upload Your Document for Verification</h1>
+        <p>Select the document you want to verify and upload it here</p>
+
+        <form action="{{ url_for('verify_document') }}" method="POST" enctype="multipart/form-data">
+            <label for="file-input" class="file-input-label">Choose File</label>
+            <input type="file" id="file-input" name="file" class="file-input">
+            <button type="submit" class="analyze-button">Upload and Verify</button>
+            <a href="{{ url_for('payment') }}" class="payment-button">Proceed to Payment</a>
+
+        </form>
+        
+        {% if uploaded_image or extracted_image %}
+    <div class="image-container">
+        {% if uploaded_image %}
+            <div class="image-item">
+                <h2>Uploaded File</h2>
+                <img src="{{ uploaded_image }}" alt="Uploaded Image" onclick="openModal(this.src)">
+            </div>
+        {% endif %}
+
+        {% if extracted_image %}
+            <div class="image-item">
+                <h2>Extracted Signature</h2>
+                <img src="{{ extracted_image }}" alt="Extracted Signature" onclick="openModal(this.src)">
+            </div>
+        {% endif %}
+
+        {% if prediction %}
+            <div class="result-item">
+                <h2>Prediction Result</h2>
+                <p>The signature confidence is: {{ prediction }}%</p>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
+        </div>
+
+        <!-- Payment Button -->
+        
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="img01">
+    </div>
+
+    <script>
+        function openModal(src) {
+            var modal = document.getElementById("myModal");
+            var img = document.getElementById("img01");
+            img.src = src;
+            modal.style.display = "flex";
+        }
+
+        function closeModal() {
+            var modal = document.getElementById("myModal");
+            modal.style.display = "none";
+        }
+    </script>
+</body>
+</html>

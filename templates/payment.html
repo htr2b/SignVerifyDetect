@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment</title>
+    <style>
+        /* Genel Ayarlar */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0; /* Açık gri arka plan */
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Payment Sayfası Genel Ayarlar */
+        .payment-container {
+            width: 90%;
+            max-width: 800px;
+            background-color: #ffffff; /* Beyaz arka plan */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            color: #333; /* Yazı rengi */
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; /* Enable relative positioning for child elements */
+        }
+
+        /* Payment Form */
+        .payment-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            width: 80%;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1em;
+            color: #666; /* Koyu gri label rengi */
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc; /* Açık gri kenar rengi */
+            border-radius: 5px;
+        }
+
+        .submit-button {
+            padding: 15px 30px;
+            background-color: #cccccc; /* Gri arka plan */
+            color: #333; /* Koyu gri yazı rengi */
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .submit-button:hover {
+            background-color: #b0b0b0; /* Daha koyu gri hover arka plan rengi */
+            color: #333; /* Koyu gri yazı rengi hover durumunda */
+        }
+
+        /* Plan kartları */
+        .card-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+            padding: 20px;
+            border: 1px solid #ccc; /* Açık gri kenar rengi */
+            border-radius: 10px;
+            width: 100%;
+            max-width: 200px;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .card.selected {
+            background-color: #999999; /* Seçili kart rengi */
+            color: #fff;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .card p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        /* Geri Dön Butonu */
+        .back-button {
+            position: absolute; /* Absolute positioning */
+            top: 10px; /* Distance from the top */
+            left: 10px; /* Distance from the left */
+            padding: 10px 20px;
+            background-color: #ffffff; /* Beyaz arka plan */
+            color: #333; /* Koyu gri yazı rengi */
+            border: 2px solid #333; /* Koyu gri kenar rengi */
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            text-decoration: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background-color: #333; /* Koyu gri hover arka plan rengi */
+            color: #ffffff; /* Beyaz yazı rengi hover durumunda */
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .payment-container {
+                padding: 20px;
+            }
+
+            .form-group {
+                width: 100%;
+            }
+
+            .card-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <a href="{{ url_for('verify_document') }}" class="back-button">Go Back</a>
+        <h2>Payment Details</h2>
+        <form class="payment-form" action="{{ url_for('payment') }}" method="POST">
+            <div class="form-group">
+                <label for="card_number">Card Number</label>
+                <input type="text" id="card_number" name="card_number" required>
+            </div>
+            <div class="form-group">
+                <label for="expiry_date">Expiry Date</label>
+                <input type="text" id="expiry_date" name="expiry_date" required>
+            </div>
+            <div class="form-group">
+                <label for="cvv">CVV</label>
+                <input type="text" id="cvv" name="cvv" required>
+            </div>
+            <div class="form-group">
+                <label for="card_name">Card Holder Name</label>
+                <input type="text" id="card_name" name="card_name" required>
+            </div>
+            <div class="form-group">
+                <label for="plan">Choose Your Plan</label>
+                <div class="card-container"> <!-- Kartların kapsayıcısı -->
+                    <div class="card" onclick="selectCard(this)">
+                        <h3>Basic</h3>
+                        <p>$9.99/month</p>
+                    </div>
+                    <div class="card" onclick="selectCard(this)">
+                        <h3>Premium</h3>
+                        <p>$19.99/month</p>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="submit-button">Pay Now</button>
+        </form>
+    </div>
+
+    <script>
+        function selectCard(cardElement) {
+            // Tüm kartlardan 'selected' sınıfını kaldır
+            var cards = document.querySelectorAll('.card');
+            cards.forEach(function(card) {
+                card.classList.remove('selected');
+            });
+
+            // Seçili karta 'selected' sınıfını ekle
+            cardElement.classList.add('selected');
+        }
+    </script>
+</body>
+</html>
