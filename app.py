@@ -7,6 +7,7 @@ from skimage import measure, morphology
 from skimage.measure import regionprops
 import matplotlib.pyplot as plt
 import imghdr
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = './uploads/'
@@ -21,54 +22,44 @@ constant_parameter_4 = 18
 target_size = (224, 224)
 
 # Önceden eğitilmiş modelin yüklenmesi
-model = load_model('resnet50_signature_model.h5')
+model = load_model('signature_model_finetuned.h5')
 
 def extract_signature(source_image_path, save_path):
-    """Extract signature from an input image."""
+    """Gelişmiş imza çıkarma işlemi."""
     img = cv2.imread(source_image_path, 0)  # Load image in grayscale
-    img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)[1]  # Ensure binary
+    if img is None:
+        flash('Görüntü dosyası okunamadı. Lütfen geçerli bir görüntü dosyası yükleyin.', 'error')
+        return None
 
-    # Connected component analysis
-    blobs = img > img.mean()
-    blobs_labels = measure.label(blobs, background=1)
+    # Gürültü Temizleme - GaussianBlur ve MedianBlur
+    img = cv2.GaussianBlur(img, (5, 5), 0)
+    img = cv2.medianBlur(img, 3)
 
-    the_biggest_component = 0
-    total_area = 0
-    counter = 0
-    average = 0.0
+    # Adaptive Thresholding - Dinamik threshold
+    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                cv2.THRESH_BINARY_INV, 15, 10)
 
-    for region in regionprops(blobs_labels):
-        if region.area > 10:
-            total_area += region.area
-            counter += 1
-        if region.area >= 250:
-            if region.area > the_biggest_component:
-                the_biggest_component = region.area
+    # Morfolojik Operasyonlar - Erosion ve Dilation
+    kernel = np.ones((3, 3), np.uint8)
+    img = cv2.erode(img, kernel, iterations=1)
+    img = cv2.dilate(img, kernel, iterations=2)
 
-    average = total_area / counter if counter > 0 else 0
+    # Kontur Tespiti - İmza sınırlarını bulma
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        flash('İmza tespit edilemedi.', 'error')
+        return None
 
-    # Experimental-based ratio calculation
-    a4_small_size_outliar_constant = ((average / constant_parameter_1) * constant_parameter_2) + constant_parameter_3
-    a4_big_size_outliar_constant = a4_small_size_outliar_constant * constant_parameter_4
-
-    # Remove the connected pixels that are smaller than a4_small_size_outliar_constant
-    pre_version = morphology.remove_small_objects(blobs_labels, a4_small_size_outliar_constant)
+    # En büyük konturu seçme
+    largest_contour = max(contours, key=cv2.contourArea)
     
-    # Remove the connected pixels that are bigger than a4_big_size_outliar_constant
-    component_sizes = np.bincount(pre_version.ravel())
-    too_small = component_sizes > a4_big_size_outliar_constant
-    too_small_mask = too_small[pre_version]
-    pre_version[too_small_mask] = 0
+    # İmza bölgesini kesme
+    x, y, w, h = cv2.boundingRect(largest_contour)
+    signature = img[y:y + h, x:x + w]
 
-    # Save the pre-version image
-    plt.imsave('pre_version.png', pre_version)
-
-    # Read the pre-version image
-    img = cv2.imread('pre_version.png', 0)
-    img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-
-    # Save the result
-    cv2.imwrite(save_path, img)
+    # Sonuç Görüntüsünü Kaydetme
+    cv2.imwrite(save_path, signature)
+    
     return save_path
 
 def preprocess_signature(image_path):
@@ -78,7 +69,22 @@ def preprocess_signature(image_path):
         image = cv2.resize(image, target_size)
         image = image / 255.0
         image = np.stack((image,) * 3, axis=-1)  # Convert to 3-channel image
+        
+        # Data augmentation
+        datagen = ImageDataGenerator(
+            rotation_range=20,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            shear_range=0.2,
+            zoom_range=0.2,
+            horizontal_flip=True,
+            fill_mode='nearest'
+        )
+        image = np.expand_dims(image, axis=0)
+        augmented_image = datagen.flow(image, batch_size=1)
+        return augmented_image[0][0]  # Return augmented image
     return image
+
 
 def classify_signature(signature_image):
     """Classify the signature using the model and return the percentage."""
@@ -105,6 +111,7 @@ def classify_signature(signature_image):
     average_prediction = np.mean(predictions)
     percentage_prediction = average_prediction * 100  # Convert to percentage
     return percentage_prediction
+
 
 @app.route('/')
 def index():
@@ -182,4 +189,5 @@ if __name__ == '__main__':
     if not os.path.exists(app.config['OUTPUT_FOLDER']):
         os.makedirs(app.config['OUTPUT_FOLDER'])
 
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
+
