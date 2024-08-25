@@ -2,12 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 import os
 import cv2
 import numpy as np
-from tensorflow.keras.models import load_model
-from skimage import measure, morphology
-from skimage.measure import regionprops
-import matplotlib.pyplot as plt
+import requests
 import imghdr
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import load_model
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = './uploads/'
@@ -15,101 +12,67 @@ app.config['OUTPUT_FOLDER'] = './outputs/'
 app.secret_key = 'supersecretkey'
 
 # Sabitler
-constant_parameter_1 = 84
-constant_parameter_2 = 250
-constant_parameter_3 = 100
-constant_parameter_4 = 18
 target_size = (224, 224)
 
-# Önceden eğitilmiş modelin yüklenmesi
-model = load_model('signature_model_finetuned.h5')
+# Modellerin yüklenmesi
+signature_model = load_model('signature_model_finetuned.h5')  # İmza doğruluğunu ölçmek için
 
-def extract_signature(source_image_path, save_path):
-    """Gelişmiş imza çıkarma işlemi."""
-    img = cv2.imread(source_image_path, 0)  # Load image in grayscale
-    if img is None:
-        flash('Görüntü dosyası okunamadı. Lütfen geçerli bir görüntü dosyası yükleyin.', 'error')
-        return None
+# Roboflow ayarları
+API_KEY = "72AH0qqwedP99apy4E3R"
+MODEL_ENDPOINT = "https://detect.roboflow.com/sign-b5igq/1"
 
-    # Gürültü Temizleme - GaussianBlur ve MedianBlur
-    img = cv2.GaussianBlur(img, (5, 5), 0)
-    img = cv2.medianBlur(img, 3)
 
-    # Adaptive Thresholding - Dinamik threshold
-    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                cv2.THRESH_BINARY_INV, 15, 10)
+def extract_signature_with_roboflow(source_image_path, save_path):
+    """Roboflow API kullanarak imza tespiti ve çıkarma işlemi."""
+    image = open(source_image_path, "rb").read()
+    response = requests.post(
+        MODEL_ENDPOINT,
+        params={
+            "api_key": API_KEY,
+            "confidence": 40,
+            "overlap": 30
+        },
+        files={
+            "file": image
+        }
+    )
+    
+    detections = response.json().get('predictions', [])
 
-    # Morfolojik Operasyonlar - Erosion ve Dilation
-    kernel = np.ones((3, 3), np.uint8)
-    img = cv2.erode(img, kernel, iterations=1)
-    img = cv2.dilate(img, kernel, iterations=2)
+    # Resmi yükleyin
+    img = cv2.imread(source_image_path)
+    if detections:
+        # İlk tespiti kullanarak imza bölgesini kes
+        detection = detections[0]
+        x1 = max(int(detection['x'] - detection['width'] / 2), 0)
+        y1 = max(int(detection['y'] - detection['height'] / 2), 0)
+        x2 = min(int(detection['x'] + detection['width'] / 2), img.shape[1])
+        y2 = min(int(detection['y'] + detection['height'] / 2), img.shape[0])
 
-    # Kontur Tespiti - İmza sınırlarını bulma
-    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
+        signature = img[y1:y2, x1:x2]
+        cv2.imwrite(save_path, signature)
+        return save_path
+    else:
         flash('İmza tespit edilemedi.', 'error')
         return None
 
-    # En büyük konturu seçme
-    largest_contour = max(contours, key=cv2.contourArea)
-    
-    # İmza bölgesini kesme
-    x, y, w, h = cv2.boundingRect(largest_contour)
-    signature = img[y:y + h, x:x + w]
-
-    # Sonuç Görüntüsünü Kaydetme
-    cv2.imwrite(save_path, signature)
-    
-    return save_path
 
 def preprocess_signature(image_path):
     """Resize and normalize the signature image for classification."""
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if image is not None:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         image = cv2.resize(image, target_size)
         image = image / 255.0
-        image = np.stack((image,) * 3, axis=-1)  # Convert to 3-channel image
-        
-        # Data augmentation
-        datagen = ImageDataGenerator(
-            rotation_range=20,
-            width_shift_range=0.2,
-            height_shift_range=0.2,
-            shear_range=0.2,
-            zoom_range=0.2,
-            horizontal_flip=True,
-            fill_mode='nearest'
-        )
-        image = np.expand_dims(image, axis=0)
-        augmented_image = datagen.flow(image, batch_size=1)
-        return augmented_image[0][0]  # Return augmented image
-    return image
+        return image
+    return None
 
 
 def classify_signature(signature_image):
-    """Classify the signature using the model and return the percentage."""
-    signature_image = np.expand_dims(signature_image, axis=0)
-    predictions = []
-
-    # Original image prediction
-    original_prediction = model.predict(signature_image)[0][0]
-    predictions.append(original_prediction)
-
-    # Rotated image predictions
-    for k in range(1, 4):
-        rotated_image = np.rot90(signature_image, k=k, axes=(1, 2))
-        rotated_prediction = model.predict(rotated_image)[0][0]
-        predictions.append(rotated_prediction)
-
-    # Scaled image prediction
-    scaled_image = cv2.resize(signature_image[0], (112, 112))
-    scaled_image = np.expand_dims(scaled_image, axis=0)
-    scaled_prediction = model.predict(scaled_image)[0][0]
-    predictions.append(scaled_prediction)
-
-    # Average prediction
-    average_prediction = np.mean(predictions)
-    percentage_prediction = average_prediction * 100  # Convert to percentage
+    """Classify the signature using the signature model and return the percentage."""
+    signature_image = np.expand_dims(signature_image, axis=0)  # Add batch dimension
+    prediction = signature_model.predict(signature_image)[0][0]
+    percentage_prediction = prediction * 100  # Persentaj cinsinden döndür
     return percentage_prediction
 
 
@@ -117,17 +80,20 @@ def classify_signature(signature_image):
 def index():
     return render_template('index.html')
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         return redirect(url_for('verify_document'))
     return render_template('login.html')
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         return redirect(url_for('login'))
     return render_template('register.html')
+
 
 @app.route('/verify_document', methods=['GET', 'POST'])
 def verify_document():
@@ -155,18 +121,22 @@ def verify_document():
             file.save(filepath)
 
             extracted_signature_path = os.path.join(app.config['OUTPUT_FOLDER'], 'extracted_signature.png')
-            extracted_signature = extract_signature(filepath, extracted_signature_path)
+            extracted_signature = extract_signature_with_roboflow(filepath, extracted_signature_path)
 
             if extracted_signature:
                 extracted_image = url_for('output_file', filename='extracted_signature.png')
                 uploaded_image = url_for('uploaded_file', filename=filename)
 
                 processed_signature = preprocess_signature(extracted_signature_path)
-                prediction = classify_signature(processed_signature)
+                if processed_signature is not None:
+                    prediction = classify_signature(processed_signature)
+                else:
+                    flash('İmza işlenirken hata oluştu.', 'error')
             else:
                 flash('İmza tespit edilemedi.', 'error')
 
     return render_template('verify_document.html', uploaded_image=uploaded_image, extracted_image=extracted_image, prediction=prediction)
+
 
 @app.route('/payment', methods=['GET', 'POST'])
 def payment():
@@ -175,19 +145,16 @@ def payment():
         return redirect(url_for('verify_document'))
     return render_template('payment.html')
 
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 @app.route('/outputs/<filename>')
 def output_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename)
 
+
 if __name__ == '__main__':
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(app.config['OUTPUT_FOLDER']):
-        os.makedirs(app.config['OUTPUT_FOLDER'])
-
     app.run(debug=True, host='0.0.0.0')
-
