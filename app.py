@@ -6,21 +6,6 @@ import requests
 import imghdr
 from tensorflow.keras.models import load_model
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = './uploads/'
-app.config['OUTPUT_FOLDER'] = './outputs/'
-app.secret_key = 'supersecretkey'
-
-# Sabitler
-target_size = (224, 224)
-
-# Modellerin yüklenmesi
-signature_model = load_model('signature_model_finetuned.h5')  # İmza doğruluğunu ölçmek için
-
-# Roboflow ayarları
-API_KEY = "72AH0qqwedP99apy4E3R"
-MODEL_ENDPOINT = "https://detect.roboflow.com/sign-b5igq/1"
-
 
 def extract_signature_with_roboflow(source_image_path, save_path):
     """Roboflow API kullanarak imza tespiti ve çıkarma işlemi."""
