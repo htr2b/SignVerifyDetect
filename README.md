@@ -1,0 +1,1 @@
+This project is a signature verification application with artificial intelligence. First, the signature is loaded, then the signature area is detected, the accuracy of the signature is calculated and printed on the screen.
